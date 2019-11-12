@@ -62,18 +62,37 @@
             // Enter name and connect to server
             $('#btnConnect').click(() => {
                 socket.emit('user connected', $('#txtName').val());
+                $('#userNickName').css('display', 'none');
             })
 
+            // Enter msg and submit to server
             $('form').submit((e) => {
                 e.preventDefault(); // prevents page reloading
-                socket.emit('chat message', $('#txtInput').val());
+                let name = $('#txtName').val();
+                let msg = $('#txtInput').val();
+                socket.emit('chat message', msg, name);
                 $('#txtInput').val('');
+                $('#messages').append($('<li>').text(`${name}: ${msg}`)); // Get message from user directly
                 return false;
             });
 
+            // Detect user typing
+            $('#txtInput').on('keyup', () => {
+                let name = $('#txtName').val();
+                let msg = $('#txtInput').val();
+                if (msg.length > 0) socket.emit('user typing', name, true);
+                else socket.emit('user typing', name, false)
+            })
+
+            // Listen event 'welcome'
+            // socket.on('welcome', () => {
+            //     $('#messages').append($('<li>').text('Welcome to socketio-chat, please enter your name and click connect button'));
+            // });
+
             // Listen event 'chat message'
-            socket.on('chat message', (msg) => {
-                $('#messages').append($('<li>').text(msg));
+            socket.on('chat message', (msg, name) => {
+                $('#' + name).remove();
+                $('#messages').append($('<li>').text(`${name}: ${msg}`));
             });
 
             // Listen event 'user connected'
@@ -83,12 +102,23 @@
 
             // Listen event 'user disconnected'
             socket.on('user disconnected', () => {
-                $('#messages').append($('<li>').text('A user has disconnected'));
+                $('#messages').append($('<li>').text(`User '${name}' has disconnected`));
+            });
+
+            // Listen event 'user typing'
+            socket.on('user typing', (name, isTyping) => {
+                if (isTyping && $('#' + name).length == 0) {
+                    $('#messages').append($(`<li id="${name}">`).text(`'${name}' is typing...`));
+                } else if (!isTyping) {
+                    $('#' + name).remove();
+                }
             });
         });
     </script>
     <ul id="messages"></ul>
-    <input id="txtName" autocomplete="off" /><button id="btnConnect">Connect</button>
+    <div id="userNickName">
+        <input id="txtName" autocomplete="off" placeholder="Nick name" /><button id="btnConnect">Connect</button>
+    </div>
     <form action="">
         <input id="txtInput" autocomplete="off" /><button>Send</button>
     </form>

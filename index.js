@@ -11,21 +11,29 @@ server.listen(3000);
 // Connect client server
 io.on('connection', (socket) => {
 
+    // Send message welcome to user connect
+    // io.emit('welcome');
+
     // Emit event 'user connected'
     socket.on('user connected', (name) => {
         io.emit('user connected', name);
     })
 
     // Emit event 'chat message'
-    socket.on('chat message', (msg) => {
-        console.log('message: ' + msg);
-        io.emit('chat message', msg);
+    socket.on('chat message', (msg, name) => {
+        socket.broadcast.emit('chat message', msg, name); // send message to all except the user
+        // io.emit('chat message', msg, name);
     });
 
     // Emit event 'user disconnected'
     socket.on('disconnect', () => {
-        io.emit('user disconnected', { for: 'everyone' });
+        io.emit('user disconnected');
     });
+
+    // Emit event 'user typing'
+    socket.on('user typing', (name, isTyping) => {
+        socket.broadcast.emit('user typing', name, isTyping);
+    })
 })
 
 // create route, display view
